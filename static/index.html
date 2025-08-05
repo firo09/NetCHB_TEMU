@@ -1,0 +1,90 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>NETChb TEMU</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .dropzone:hover,
+    .dropzone.dragover {
+      background-color: #f0f9ff;
+      border-color: #60a5fa;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-3xl">
+    <h1 class="text-4xl font-bold text-center text-blue-600 mb-8">NETChb TEMU</h1>
+
+    <!-- 上传区 -->
+    <section id="upload-section" class="mb-8">
+      <label id="dropzone"
+             for="file-input"
+             class="dropzone flex flex-col items-center justify-center border-4 border-dashed border-gray-300 rounded-xl h-48 cursor-pointer transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-12 w-12 text-gray-400 mb-2"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 15a4 4 0 004 4h10a4 4 0 004-4m-4-4l-4-4m0 0L9 11m4-4v12" />
+        </svg>
+        <p id="upload-btn" class="text-lg text-gray-600 opacity-50">
+          Click or drag file here
+        </p>
+      </label>
+      <input type="file" id="file-input" accept=".xlsx,xls,csv" class="hidden"/>
+      <p id="loading-msg" class="text-center text-gray-500 mt-2">
+        Loading configuration…
+      </p>
+    </section>
+
+    <!-- 动态表单区 -->
+    <section id="form-section" class="hidden">
+      <form id="dynamic-form" class="grid grid-cols-2 gap-6"></form>
+      <button id="generate-btn"
+              type="button"
+              disabled
+              class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+        Generate &amp; Download
+      </button>
+    </section>
+
+    <!-- 进度条区 -->
+    <section id="progress-container" class="hidden mt-8">
+      <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+        <div id="progress" class="bg-blue-500 h-4 w-0 transition-all"></div>
+      </div>
+      <p id="progress-text" class="text-right text-gray-600 mt-2">0%</p>
+    </section>
+  </div>
+
+  <!-- 下载所需库：FileSaver、SheetJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+
+  <!-- 拖拽逻辑（无需重新声明 fileInput） -->
+  <script>
+    const dz = document.getElementById('dropzone');
+    dz.addEventListener('dragover', e => {
+      e.preventDefault();
+      dz.classList.add('dragover');
+    });
+    dz.addEventListener('dragleave', () => {
+      dz.classList.remove('dragover');
+    });
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        // 直接复用 app.js 中的全局 fileInput
+        fileInput.files = e.dataTransfer.files;
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  </script>
+</body>
+</html>
