@@ -283,9 +283,41 @@ async function generateAndDownload() {
     }
   }
 
+  // ---------- 日期格式自动识别/设置部分 begin ----------
   const header = ruleConfig.map(r=>r.Column);
   const aoa    = [header].concat(output.map(o=> header.map(c=>o[c]||'')));
-  const ws2    = XLSX.utils.aoa_to_sheet(aoa);
+
+  // 找所有应设为日期格式的列
+  const dateCols = ruleConfig
+    .map((r, idx) => ({idx, fmt: (r.Format||'').toLowerCase()}))
+    .filter(r => r.fmt.includes('yyyy') && r.fmt.includes('m') && r.fmt.includes('d'))
+    .map(r => r.idx);
+
+  const ws2 = XLSX.utils.aoa_to_sheet(aoa);
+
+  // 设置日期列单元格的Excel类型和格式
+  for (let r = 1; r < aoa.length; r++) { // r=1是跳过表头
+    for (const c of dateCols) {
+      const colLetter = XLSX.utils.encode_col(c);
+      const cellRef = colLetter + (r+1);
+      const val = aoa[r][c];
+      if (val) {
+        let d = new Date(val);
+        // 兼容 m/d/yyyy、yyyy-mm-dd 等格式
+        if (isNaN(d.getTime())) {
+          const m = String(val).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+          if (m) d = new Date(m[3], m[1]-1, m[2]);
+        }
+        if (!isNaN(d.getTime())) {
+          ws2[cellRef].t = 'd';
+          ws2[cellRef].z = 'm/d/yyyy'; // 如有需要可进一步动态匹配 Format 字段
+          ws2[cellRef].v = d;
+        }
+      }
+    }
+  }
+  // ---------- 日期格式自动识别/设置部分 end ----------
+
   const wb2    = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb2, ws2, 'Sheet1');
 
