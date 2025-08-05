@@ -263,14 +263,17 @@ async function generateAndDownload() {
         .forEach(c=> out[c] = hit[c] || '');
     })();
 
-    // MID 映射并清空其它字段
+    // MID 映射并清空其它字段（大小写不敏感的精确匹配）
     (() => {
-      const nm = out.ManufacturerName || '';
-      const hit= midData.find(r=> nm.includes(r.ManufacturerName));
+      const nm = (out.ManufacturerName || '').trim();
+      const hit = midData.find(r => {
+        const name = (r.ManufacturerName || '').trim();
+        return name !== '' && nm.toLowerCase() === name.toLowerCase();
+      });
       if (hit) {
         out.ManufacturerCode = hit.ManufacturerCode || '';
         ['ManufacturerName','ManufacturerStreetAddress','ManufacturerCity','ManufacturerPostalCode','ManufacturerCountry']
-          .forEach(f=> out[f] = '');
+          .forEach(f => { out[f] = ''; });
       }
     })();
 
@@ -297,3 +300,4 @@ async function generateAndDownload() {
   const filename = `${formValues.MAWB || defaultMawb}_NETChb_TEMU.xlsx`;
   XLSX.writeFile(wb2, filename);
 }
+
