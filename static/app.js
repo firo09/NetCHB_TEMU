@@ -18,7 +18,7 @@ const generateBtn = document.getElementById('generate-btn');
 
 let ruleConfig = [], htsData = [], midData = [];
 
-
+// 日期格式化工具，支持 m/d/yyyy, yyyy-mm-dd, mm/dd/yyyy 等
 function formatDateByPattern(date, pattern) {
   const yyyy = date.getFullYear();
   const m = date.getMonth() + 1;
@@ -32,15 +32,14 @@ function formatDateByPattern(date, pattern) {
     .replace(/dd/g, pad(d))
     .replace(/d/g, d);
 }
-// 新增函数：只用于mawb sheet提取
+
+// 只用于mawb sheet提取
 function getValueFromMawbSheet(mawbSheetArr, colName) {
   if (!Array.isArray(mawbSheetArr) || mawbSheetArr.length < 2) return '';
   const header = mawbSheetArr[0] || [];
   const row    = mawbSheetArr[1] || [];
-  // 用 toString 防止 undefined，trim+小写匹配
   const idx = header.findIndex(h => (h || '').toString().trim().toLowerCase() === colName.trim().toLowerCase());
   if (idx === -1) {
-    // 控制台提示帮助你调试
     console.warn('找不到表头对应列', colName, header);
     return '';
   }
@@ -54,13 +53,9 @@ function sanitize(label) {
 
 // 工具：根据 Format 字符串动态生成正则表达式
 function buildRegex(fmt) {
-  // 转义正则特殊字符，保留 yMd
   let regexStr = fmt.replace(/([.+?^=!:${}()|\[\]\/\\])/g, '\\$1');
-  // yyyy -> \\d{4}
   regexStr = regexStr.replace(/y{4}/g, '\\d{4}');
-  // m 或 mm -> \\d{1,2}
   regexStr = regexStr.replace(/m{1,2}/gi, '\\d{1,2}');
-  // d 或 dd -> \\d{1,2}
   regexStr = regexStr.replace(/d{1,2}/gi, '\\d{1,2}');
   return new RegExp('^' + regexStr + '$');
 }
@@ -116,7 +111,6 @@ function renderForm(defaultMawb) {
   const formEl = document.getElementById('dynamic-form');
   formEl.innerHTML = '';
 
-  // 收集所有 user_input 的 Label 并去重
   const labels = [];
   const primaryRuleFor = {};
   for (const r of ruleConfig) {
@@ -129,12 +123,10 @@ function renderForm(defaultMawb) {
     }
   }
 
-  // 为每个唯一 Label 渲染输入框
   for (const label of labels) {
     const rule = primaryRuleFor[label];
     const id = sanitize(label);
 
-    // 计算默认值
     let defaultVal = '';
     if (rule.default_value?.startsWith('<from_filename:')) {
       defaultVal = defaultMawb;
@@ -144,7 +136,6 @@ function renderForm(defaultMawb) {
       defaultVal = rule.default_value || '';
     }
 
-    // placeholder 使用配置里的 Format
     const fmt = (rule.Format || '').trim();
     const placeholder = fmt || '';
 
@@ -170,7 +161,6 @@ function renderForm(defaultMawb) {
                data-format="${fmt}"
                class="border rounded px-2 py-1 w-full placeholder-gray-400" />
       `;
-      // 如果是日期格式，初始化 flatpickr
       if (fmt.toLowerCase() === 'yyyy/m/d' && typeof flatpickr === 'function') {
         flatpickr(`#${id}`, { dateFormat: 'Y/m/d', allowInput: true });
       }
@@ -178,18 +168,14 @@ function renderForm(defaultMawb) {
 
     formEl.appendChild(wrapper);
   }
-
-  // 去除任何 setupValidation
 }
 
 // 7. 生成并下载
 async function generateAndDownload() {
-  // 收集用户输入
   const formValues = {};
   document.querySelectorAll('#dynamic-form input, #dynamic-form select')
     .forEach(el => formValues[el.id] = el.value.trim());
 
-  // 读取并解密 Excel
   const buf = await currentFile.arrayBuffer();
   let wb;
   try {
@@ -198,7 +184,6 @@ async function generateAndDownload() {
     return alert('Failed to open encrypted file: ' + err.message);
   }
 
-  // 解析 sheets
   const sheetData = {};
   let mawbSheetArr = [];
   for (const name of wb.SheetNames) {
@@ -214,7 +199,6 @@ async function generateAndDownload() {
         return o;
       });
     } else if (key === 'mawb') {
-      // 额外保存一份原始二维数组（用于表头查找）
       mawbSheetArr = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
       sheetData['mawb'] = XLSX.utils.sheet_to_json(ws, { defval:'' });
     } else {
@@ -222,7 +206,6 @@ async function generateAndDownload() {
     }
   }
 
-  // 构建输出
   const main = sheetData['hawb'] || [];
   const output = [];
   const prog = document.getElementById('progress');
@@ -241,7 +224,6 @@ async function generateAndDownload() {
       }
       else if (src === 'user_upload') {
         const sk = (cfg.Sheet||'').trim().toLowerCase();
-        // ---- 单独处理 mawb 的表头查找 ----
         if (sk === 'mawb' && cfg.Reference) {
           out[col] = getValueFromMawbSheet(mawbSheetArr, cfg.Reference);
         } else {
@@ -251,7 +233,6 @@ async function generateAndDownload() {
         }
       }
       else if (src === 'user_input') {
-        // 用 label 拿原始输入，再 Parsing
         const label = cfg.Label.trim();
         let v = formValues[sanitize(label)] || '';
         const m = (cfg.Parsing||'').match(/(left|right)\((\d+)\)/i);
@@ -263,11 +244,12 @@ async function generateAndDownload() {
       }
       else if (src === 'system') {
         const d = new Date();
-        const fmt = (cfg.Format || '').trim().toLowerCase();
+        const fmt = (cfg.Format || '').trim();
         if (fmt) {
           out[col] = formatDateByPattern(d, fmt);
         } else {
-          out[col] = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+          out[col] = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+        }
       }
     }
 
@@ -293,7 +275,6 @@ async function generateAndDownload() {
 
     output.push(out);
 
-    // 更新进度
     if ((i+1)%20===0 || i===main.length-1) {
       const pct = Math.round(((i+1)/main.length)*100);
       pt.innerText     = `${pct}%`;
@@ -302,7 +283,6 @@ async function generateAndDownload() {
     }
   }
 
-  // 导出
   const header = ruleConfig.map(r=>r.Column);
   const aoa    = [header].concat(output.map(o=> header.map(c=>o[c]||'')));
   const ws2    = XLSX.utils.aoa_to_sheet(aoa);
@@ -312,4 +292,3 @@ async function generateAndDownload() {
   const mawbOrig = formValues[sanitize('MAWB')] || currentDefaultMawb;
   XLSX.writeFile(wb2, `${mawbOrig}_NETChb_TEMU.xlsx`);
 }
-
