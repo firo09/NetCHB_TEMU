@@ -18,6 +18,20 @@ const generateBtn = document.getElementById('generate-btn');
 
 let ruleConfig = [], htsData = [], midData = [];
 
+
+function formatDateByPattern(date, pattern) {
+  const yyyy = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const pad = n => (n < 10 ? '0' + n : n);
+
+  return pattern
+    .replace(/yyyy/gi, yyyy)
+    .replace(/mm/g, pad(m))
+    .replace(/m/g, m)
+    .replace(/dd/g, pad(d))
+    .replace(/d/g, d);
+}
 // 新增函数：只用于mawb sheet提取
 function getValueFromMawbSheet(mawbSheetArr, colName) {
   if (!Array.isArray(mawbSheetArr) || mawbSheetArr.length < 2) return '';
@@ -249,7 +263,11 @@ async function generateAndDownload() {
       }
       else if (src === 'system') {
         const d = new Date();
-        out[col] = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+        const fmt = (cfg.Format || '').trim().toLowerCase();
+        if (fmt) {
+          out[col] = formatDateByPattern(d, fmt);
+        } else {
+          out[col] = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
       }
     }
 
@@ -294,3 +312,4 @@ async function generateAndDownload() {
   const mawbOrig = formValues[sanitize('MAWB')] || currentDefaultMawb;
   XLSX.writeFile(wb2, `${mawbOrig}_NETChb_TEMU.xlsx`);
 }
+
