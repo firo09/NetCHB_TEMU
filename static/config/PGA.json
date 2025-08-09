@@ -4,20 +4,23 @@
     "Delete_code": "N",
     "FDAPROGRAMCODE": "FOO",
     "FDAPROCESSINGCODE": "CCW",
-    "FDAINTENDEDUSECODE": "130.029"
+    "FDAINTENDEDUSECODE": "130.029",
+    "FDAARRIVALTIME": "08:00"
   },
   {
     "FDAPRODUCTCODE": "53",
     "Delete_code": "N",
     "FDAPROGRAMCODE": "COS",
     "FDAPROCESSINGCODE": "",
-    "FDAINTENDEDUSECODE": "100.000"
+    "FDAINTENDEDUSECODE": "100.000",
+    "FDAARRIVALTIME": "08:00"
   },
   {
     "FDAPRODUCTCODE": "95",
     "Delete_code": "Y",
     "FDAPROGRAMCODE": "",
     "FDAPROCESSINGCODE": "",
-    "FDAINTENDEDUSECODE": ""
+    "FDAINTENDEDUSECODE": "",
+    "FDAARRIVALTIME": ""
   }
 ]
